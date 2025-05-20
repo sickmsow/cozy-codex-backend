@@ -4,13 +4,9 @@
   "description": "Backend microservices for library app",
   "type": "module",
   "scripts": {
-    "start:book": "node ./book-service/src/server.js",
-    "start:library": "node ./library-service/src/server.js",
-    "start:all": "concurrently \"npm run start:book\" \"npm run start:library\"",
-    "initdb:book": "node ./book-service/scripts/initDB.js",
-    "initdb:library": "node ./library-service/scripts/initDB.js",
-    "test:book": "NODE_OPTIONS=--experimental-vm-modules jest ./book-service/src/test",
-    "test:library": "NODE_OPTIONS=--experimental-vm-modules jest ./library-service/src/test"
+    "start": "node src/server.js",
+    "initdb": "node scripts/initDB.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest src/test"
   },
   "keywords": [],
   "author": "",
