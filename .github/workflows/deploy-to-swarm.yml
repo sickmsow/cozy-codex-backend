@@ -1,4 +1,4 @@
-name: Deploy to Docker Swarm
+name: Deploy to Docker Swarm with Environment File
 
 on:
   push:
@@ -89,9 +89,6 @@ jobs:
         SWARM_MANAGER_IP1: ${{ secrets.SWARM_MANAGER_IP1 }}
       run: |
         scp docker-compose.yml ubuntu@$SWARM_MANAGER_IP1:~/docker-compose.yml
-        # Removed the unsupported --env-file flag.
-        # The env_file directive in docker-compose.yml combined with
-        # the .env file being present on the manager handles env vars.
-        ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy --compose-file ~/docker-compose.yml my-microservices-stack"
+        ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy --compose-file ~/docker-compose.yml /home/ubuntu/.env my-microservices-stack"
         ssh ubuntu@$SWARM_MANAGER_IP1 "docker service ls"
         echo "Deployment completed successfully"
