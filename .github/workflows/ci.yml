@@ -26,5 +26,5 @@ jobs:
         run: npm install
 
       - name: Run unit for book micro-service
-        run: npm test:book
+        run: npm run test:book
 
