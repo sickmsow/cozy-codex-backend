@@ -1,0 +1,27 @@
+# .github/workflows/deploy-to-swarm.yml
+name: Deploy to Docker Swarm
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    # steps:
+    # - name: Checkout code
+    #   uses: actions/checkout@v3
+
+    # - name: Setup SSH
+    #   uses: webfactory/ssh-agent@v0.5.4
+    #   with:
+    #     ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    # - name: Deploy stack to Docker Swarm manager
+    #   env:
+    #     SWARM_MANAGER_IP: ${{ secrets.SWARM_MANAGER_IP }}
+    #   run: |
+    #     scp docker-compose.yml ubuntu@$SWARM_MANAGER_IP:~/docker-compose.yml
+    #     ssh ubuntu@$SWARM_MANAGER_IP "docker stack deploy -c ~/docker-compose.yml my-microservices-stack"
