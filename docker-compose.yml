@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   book-service:
-    image: <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/book-service:latest
+    image: 023704516495.dkr.ecr.us-east-1.amazonaws.com/book-service:latest
     ports:
       - "8000:8000"
     deploy:
@@ -13,7 +13,7 @@ services:
       - my-network
 
   library-service:
-    image: <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/library-service:latest
+    image: 023704516495.dkr.ecr.us-east-1.amazonaws.com/library-service:latest
     ports:
       - "7000:7000"
     deploy:
