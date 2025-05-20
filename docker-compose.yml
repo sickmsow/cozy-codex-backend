@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  book-service:
+    image: <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/book-service:latest
+    ports:
+      - "8000:8000"
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks:
+      - my-network
+
+  library-service:
+    image: <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/library-service:latest
+    ports:
+      - "7000:7000"
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: overlay
