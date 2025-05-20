@@ -26,6 +26,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.5.4
       with:
@@ -37,6 +48,14 @@ jobs:
         ssh-keyscan -H ${{ secrets.SWARM_MANAGER_IP1 }} >> ~/.ssh/known_hosts
         ssh-keyscan -H ${{ secrets.SWARM_MANAGER_IP2 }} >> ~/.ssh/known_hosts
         chmod 600 ~/.ssh/known_hosts
+
+    - name: Configure ECR login on Swarm managers
+      env:
+        SWARM_MANAGER_IP1: ${{ secrets.SWARM_MANAGER_IP1 }}
+        SWARM_MANAGER_IP2: ${{ secrets.SWARM_MANAGER_IP2 }}
+      run: |
+        aws ecr get-login-password --region us-east-1 | ssh ubuntu@$SWARM_MANAGER_IP1 "docker login --username AWS --password-stdin 023704516495.dkr.ecr.us-east-1.amazonaws.com"
+        aws ecr get-login-password --region us-east-1 | ssh ubuntu@$SWARM_MANAGER_IP2 "docker login --username AWS --password-stdin 023704516495.dkr.ecr.us-east-1.amazonaws.com"
 
     - name: Create environment file on Swarm manager
       env:
@@ -57,6 +76,11 @@ jobs:
             image: 023704516495.dkr.ecr.us-east-1.amazonaws.com/book-service:${{ github.event.inputs.book_service_tag }}
             deploy:
               replicas: 2
+              update_config:
+                parallelism: 1
+                delay: 10s
+              restart_policy:
+                condition: on-failure
             ports:
               - "8080:8080"
             env_file:
@@ -72,4 +96,5 @@ jobs:
       run: |
         scp docker-compose.yml ubuntu@$SWARM_MANAGER_IP1:~/docker-compose.yml
         ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy --compose-file ~/docker-compose.yml --env-file ~/$ENV_FILE_NAME my-microservices-stack"
+        ssh ubuntu@$SWARM_MANAGER_IP1 "docker service ls"
         echo "Deployment completed successfully"
