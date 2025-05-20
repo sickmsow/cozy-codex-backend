@@ -1,19 +1,12 @@
 name: Deploy to Docker Swarm
 
 on:
-  workflow_dispatch:
-    inputs:
-      book_service_tag:
-        description: 'Tag for book-service image'
-        required: true
-        default: 'latest'
-      library_service_tag:
-        description: 'Tag for library-service image'
-        required: true
-        default: 'latest'
-      ecr_registry:
-        description: 'ECR Registry URL (without https://)'
-        required: true
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   deploy:
