@@ -1,0 +1,35 @@
+{
+  "name": "book-service",
+  "version": "1.0.0",
+  "description": "Backend microservices for library app",
+  "type": "module",
+  "scripts": {
+    "start:book": "node ./book-service/src/server.js",
+    "start:library": "node ./library-service/src/server.js",
+    "start:all": "concurrently \"npm run start:book\" \"npm run start:library\"",
+    "initdb:book": "node ./book-service/scripts/initDB.js",
+    "initdb:library": "node ./library-service/scripts/initDB.js",
+    "test:book": "NODE_OPTIONS=--experimental-vm-modules jest ./book-service/src/test",
+    "test:library": "NODE_OPTIONS=--experimental-vm-modules jest ./library-service/src/test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.27.1",
+    "@babel/preset-env": "^7.27.2",
+    "babel-jest": "^29.7.0",
+    "dotenv-cli": "^8.0.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.1.1"
+  }
+}
