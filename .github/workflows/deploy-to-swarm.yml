@@ -7,6 +7,13 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      book_service_tag:
+        description: 'Tag for the book-service image'
+        required: true
+        default: b851abeee82a48d2502eaa1e51aa95e2b5db6e25
+      # You can add inputs for other service tags if needed
 
 jobs:
   deploy:
@@ -15,72 +22,44 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    
+
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.5.4
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-    
+
     - name: Add SSH known hosts
       run: |
         mkdir -p ~/.ssh
         ssh-keyscan -H ${{ secrets.SWARM_MANAGER_IP1 }} >> ~/.ssh/known_hosts
         ssh-keyscan -H ${{ secrets.SWARM_MANAGER_IP2 }} >> ~/.ssh/known_hosts
         chmod 600 ~/.ssh/known_hosts
-    
+
     - name: Generate docker-compose.yml with specified tags
       run: |
-        cat > docker-compose.yml << 'EOF'
+        cat > docker-compose.yml << EOF
         version: '3.8'
 
         services:
           book-service:
-            image: ${{ github.event.inputs.ecr_registry }}/book-service:${{ github.event.inputs.book_service_tag }}
-            ports:
-              - "8000:8000"
-            env_file:
-              - my-microservices-stack.env
+            image: 023704516495.dkr.ecr.us-east-1.amazonaws.com/book-service:${{ github.event.inputs.book_service_tag }}
             deploy:
               replicas: 2
-              restart_policy:
-                condition: on-failure
-            networks:
-              - my-network
-
-          library-service:
-            image: ${{ github.event.inputs.ecr_registry }}/library-service:${{ github.event.inputs.library_service_tag }}
             ports:
-              - "7000:7000"
-            env_file:
-              - my-microservices-stack.env
-            deploy:
-              replicas: 2
-              restart_policy:
-                condition: on-failure
-            networks:
-              - my-network
-
-        networks:
-          my-network:
-            driver: overlay
+              - "8080:8080"
+            # Add any other necessary configurations for book-service
         EOF
-        
+
         cat docker-compose.yml
-    
-    - name: Create environment file from secret and deploy stack
+
+    - name: Deploy stack to Docker Swarm manager
       env:
         SWARM_MANAGER_IP1: ${{ secrets.SWARM_MANAGER_IP1 }}
       run: |
-        # Create .env file with secret contents
-        cat > .env << EOF
-        ${{ secrets.ENV_FILE_CONTENTS }}
-        EOF
-        
-        # Copy .env and docker-compose.yml to swarm manager
-        scp .env ubuntu@$SWARM_MANAGER_IP1:~/my-microservices-stack.env
+        # Copy the docker-compose.yml to the primary manager
         scp docker-compose.yml ubuntu@$SWARM_MANAGER_IP1:~/docker-compose.yml
-        
-        # Deploy the stack on swarm manager
+
+        # Deploy the stack from the primary manager
         ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy -c ~/docker-compose.yml my-microservices-stack"
-        
+
         echo "Deployment completed successfully"
