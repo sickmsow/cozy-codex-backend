@@ -28,3 +28,6 @@ jobs:
       - name: Run unit for book micro-service
         run: npm run test:book
 
+      - name: Run unit for library micro-service
+        run: npm run test:library
+
