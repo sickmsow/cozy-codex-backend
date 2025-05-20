@@ -1,4 +1,4 @@
-name: Deploy to Docker Swarm
+name: Deploy to Docker Swarm with Environment File
 
 on:
   push:
@@ -13,7 +13,10 @@ on:
         description: 'Tag for the book-service image'
         required: true
         default: b851abeee82a48d2502eaa1e51aa95e2b5db6e25
-      # You can add inputs for other service tags if needed
+      env_file_name:
+        description: 'Name of the environment file on the Swarm manager'
+        required: true
+        default: .env
 
 jobs:
   deploy:
@@ -35,6 +38,15 @@ jobs:
         ssh-keyscan -H ${{ secrets.SWARM_MANAGER_IP2 }} >> ~/.ssh/known_hosts
         chmod 600 ~/.ssh/known_hosts
 
+    - name: Create environment file on Swarm manager
+      env:
+        SWARM_MANAGER_IP1: ${{ secrets.SWARM_MANAGER_IP1 }}
+        ENV_FILE_CONTENTS: ${{ secrets.ENV_FILE_CONTENTS }}
+        ENV_FILE_NAME: ${{ github.event.inputs.env_file_name }}
+      run: |
+        echo "$ENV_FILE_CONTENTS" | ssh ubuntu@$SWARM_MANAGER_IP1 "cat > ~/$ENV_FILE_NAME"
+        echo "Environment file '$ENV_FILE_NAME' created on Swarm manager"
+
     - name: Generate docker-compose.yml with specified tags
       run: |
         cat > docker-compose.yml << EOF
@@ -47,7 +59,8 @@ jobs:
               replicas: 2
             ports:
               - "8080:8080"
-            # Add any other necessary configurations for book-service
+            env_file:
+              - ./${{ github.event.inputs.env_file_name }}
         EOF
 
         cat docker-compose.yml
@@ -55,11 +68,8 @@ jobs:
     - name: Deploy stack to Docker Swarm manager
       env:
         SWARM_MANAGER_IP1: ${{ secrets.SWARM_MANAGER_IP1 }}
+        ENV_FILE_NAME: ${{ github.event.inputs.env_file_name }}
       run: |
-        # Copy the docker-compose.yml to the primary manager
         scp docker-compose.yml ubuntu@$SWARM_MANAGER_IP1:~/docker-compose.yml
-
-        # Deploy the stack from the primary manager
-        ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy -c ~/docker-compose.yml my-microservices-stack"
-
+        ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy --compose-file ~/docker-compose.yml --env-file ~/$ENV_FILE_NAME my-microservices-stack"
         echo "Deployment completed successfully"
