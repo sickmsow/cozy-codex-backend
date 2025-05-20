@@ -38,6 +38,8 @@ jobs:
             image: ${{ github.event.inputs.ecr_registry }}/book-service:${{ github.event.inputs.book_service_tag }}
             ports:
               - "8000:8000"
+            env_file:
+              - my-microservices-stack.env
             deploy:
               replicas: 2
               restart_policy:
@@ -49,6 +51,8 @@ jobs:
             image: ${{ github.event.inputs.ecr_registry }}/library-service:${{ github.event.inputs.library_service_tag }}
             ports:
               - "7000:7000"
+            env_file:
+              - my-microservices-stack.env
             deploy:
               replicas: 2
               restart_policy:
@@ -63,11 +67,20 @@ jobs:
         
         cat docker-compose.yml
     
-    - name: Deploy stack to Docker Swarm manager
+    - name: Create environment file from secret and deploy stack
       env:
         SWARM_MANAGER_IP1: ${{ secrets.SWARM_MANAGER_IP1 }}
       run: |
-        # Copy the docker-compose.yml to the primary manager
+        # Create .env file with secret contents
+        cat > .env << EOF
+        ${{ secrets.ENV_FILE_CONTENTS }}
+        EOF
+        
+        # Copy .env and docker-compose.yml to swarm manager
+        scp .env ubuntu@$SWARM_MANAGER_IP1:~/my-microservices-stack.env
         scp docker-compose.yml ubuntu@$SWARM_MANAGER_IP1:~/docker-compose.yml
         
-        # Deploy the stack from
+        # Deploy the stack on swarm manager
+        ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy -c ~/docker-compose.yml my-microservices-stack"
+        
+        echo "Deployment completed successfully"
