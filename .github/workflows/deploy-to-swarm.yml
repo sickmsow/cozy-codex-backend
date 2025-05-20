@@ -13,10 +13,6 @@ on:
         description: 'Tag for the book-service image'
         required: true
         default: b851abeee82a48d2502eaa1e51aa95e2b5db6e25
-      env_file_name:
-        description: 'Name of the environment file on the Swarm manager'
-        required: true
-        default: .env
 
 jobs:
   deploy:
@@ -61,10 +57,9 @@ jobs:
       env:
         SWARM_MANAGER_IP1: ${{ secrets.SWARM_MANAGER_IP1 }}
         ENV_FILE_CONTENTS: ${{ secrets.ENV_FILE_CONTENTS }}
-        ENV_FILE_NAME: ${{ github.event.inputs.env_file_name }}
       run: |
-        echo "$ENV_FILE_CONTENTS" | ssh ubuntu@$SWARM_MANAGER_IP1 "cat > ~/$ENV_FILE_NAME"
-        echo "Environment file '$ENV_FILE_NAME' created on Swarm manager"
+        echo "$ENV_FILE_CONTENTS" | ssh ubuntu@$SWARM_MANAGER_IP1 "cat > ~/.env"
+        echo "Environment file created on Swarm manager"
 
     - name: Generate docker-compose.yml with specified tags
       run: |
@@ -84,7 +79,7 @@ jobs:
             ports:
               - "8080:8080"
             env_file:
-              - ./${{ github.event.inputs.env_file_name }}
+              - .env
         EOF
 
         cat docker-compose.yml
@@ -92,9 +87,8 @@ jobs:
     - name: Deploy stack to Docker Swarm manager
       env:
         SWARM_MANAGER_IP1: ${{ secrets.SWARM_MANAGER_IP1 }}
-        ENV_FILE_NAME: ${{ github.event.inputs.env_file_name }}
       run: |
         scp docker-compose.yml ubuntu@$SWARM_MANAGER_IP1:~/docker-compose.yml
-        ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy --compose-file ~/docker-compose.yml --env-file ~/$ENV_FILE_NAME my-microservices-stack"
+        ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy --compose-file ~/docker-compose.yml --env-file ~/.env my-microservices-stack"
         ssh ubuntu@$SWARM_MANAGER_IP1 "docker service ls"
         echo "Deployment completed successfully"
