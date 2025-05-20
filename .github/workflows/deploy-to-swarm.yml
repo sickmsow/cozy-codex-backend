@@ -30,23 +30,35 @@ jobs:
     
     - name: Generate docker-compose.yml with specified tags
       run: |
-        cat > docker-compose.yml << EOF
+        cat > docker-compose.yml << 'EOF'
         version: '3.8'
-        
+
         services:
           book-service:
             image: ${{ github.event.inputs.ecr_registry }}/book-service:${{ github.event.inputs.book_service_tag }}
+            ports:
+              - "8000:8000"
             deploy:
               replicas: 2
-            ports:
-              - "8080:8080"
-        
+              restart_policy:
+                condition: on-failure
+            networks:
+              - my-network
+
           library-service:
             image: ${{ github.event.inputs.ecr_registry }}/library-service:${{ github.event.inputs.library_service_tag }}
+            ports:
+              - "7000:7000"
             deploy:
               replicas: 2
-            ports:
-              - "8081:8081"
+              restart_policy:
+                condition: on-failure
+            networks:
+              - my-network
+
+        networks:
+          my-network:
+            driver: overlay
         EOF
         
         cat docker-compose.yml
@@ -58,7 +70,4 @@ jobs:
         # Copy the docker-compose.yml to the primary manager
         scp docker-compose.yml ubuntu@$SWARM_MANAGER_IP1:~/docker-compose.yml
         
-        # Deploy the stack from the primary manager
-        ssh ubuntu@$SWARM_MANAGER_IP1 "docker stack deploy -c ~/docker-compose.yml my-microservices-stack"
-        
-        echo "Deployment completed successfully"
+        # Deploy the stack from
